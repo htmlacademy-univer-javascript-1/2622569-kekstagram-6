@@ -40,6 +40,7 @@ function pickRandomPhotos(photos) {
   return copy.slice(0, Math.min(RANDOM_PHOTO_LIMIT, copy.length));
 }
 
+
 /**
  * Возвращает массив, отсортированный по количеству комментариев (убывание)
  */
