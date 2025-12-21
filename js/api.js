@@ -9,6 +9,7 @@ const getData = async () => {
   return await response.json();
 };
 
+
 // Отправка данных на сервер
 const sendData = async (data) => {
   const response = await fetch(BASE_URL, {
@@ -20,5 +21,6 @@ const sendData = async (data) => {
   }
   return await response.json();
 };
+
 
 export { getData, sendData };
