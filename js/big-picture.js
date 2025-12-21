@@ -19,7 +19,7 @@ const closeBtn = fullViewSection.querySelector('.big-picture__cancel');
 
 let allComments = [];
 let renderedCount = 0;
-
+//исправить
 /**
  * Создание DOM-элемента комментария
  */
