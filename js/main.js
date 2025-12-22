@@ -75,6 +75,7 @@ const applyFilter = debounce((filterId) => {
       break;
   }
 
+
   // Рисуем миниатюры для выбранного набора
   renderThumbnails(currentDisplayed);
 }, DEBOUNCE_DELAY);
