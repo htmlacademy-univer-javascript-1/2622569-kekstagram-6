@@ -34,6 +34,7 @@ export function resetForm() {
   const effectSliderEl = document.querySelector('.effect-level__slider');
   const effectWrapper = document.querySelector('.effect-level');
 
+
   try {
     if (form) form.reset();
   } catch (err) {
