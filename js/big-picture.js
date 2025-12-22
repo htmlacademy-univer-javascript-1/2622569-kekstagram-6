@@ -5,6 +5,7 @@ import { handleEscapePress } from './form-utils.js';
  */
 const COMMENTS_BATCH_SIZE = 5;
 
+
 // Основные DOM-элементы для полноэкранного режима
 const fullViewSection = document.querySelector('.big-picture');
 const fullImage = fullViewSection.querySelector('.big-picture__img img');
