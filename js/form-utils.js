@@ -71,7 +71,7 @@ export function resetForm() {
     }
   }
 
-  // Скрываем панель эффектов (обёртку)
+  // Скрываем панель эффектов
   if (effectWrapper) {
     effectWrapper.style.display = 'none';
   }
