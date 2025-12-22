@@ -351,6 +351,7 @@ export function initForm(photosArray, renderThumbnails) {
       });
 
 
+
       galleryContainer.appendChild(newThumbnail);
 
       // Сбрасываем форму
