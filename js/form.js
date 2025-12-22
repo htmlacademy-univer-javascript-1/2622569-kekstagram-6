@@ -350,7 +350,7 @@ export function initForm(photosArray, renderThumbnails) {
         import('./big-picture.js').then(({ showFullView }) => showFullView(newPhoto));
       });
 
-      // Вставляем в конец списка
+
       galleryContainer.appendChild(newThumbnail);
 
       // Сбрасываем форму
