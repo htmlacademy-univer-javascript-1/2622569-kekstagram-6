@@ -16,6 +16,8 @@ const SCALE_MAX = 100;
  * @param {Array} photosArray — массив текущих фото (моделируемая "база" в клиенте)
  * @param {Function} renderThumbnails — функция отрисовки миниатюр (из thumbnails.js)
  */
+
+
 export function initForm(photosArray, renderThumbnails) {
   // Основные элементы формы
   const form = document.querySelector('.img-upload__form');
@@ -24,6 +26,7 @@ export function initForm(photosArray, renderThumbnails) {
   const overlayCloseBtn = overlay.querySelector('.img-upload__cancel');
   const submitBtn = form.querySelector('.img-upload__submit');
   const previewImg = overlay.querySelector('.img-upload__preview img');
+
 
   // Элементы слайдера эффектов
   const effectPanel = document.querySelector('.effect-level');
