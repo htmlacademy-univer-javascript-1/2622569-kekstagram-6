@@ -55,6 +55,7 @@ function clearGallery() {
   galleryRoot.querySelectorAll('.picture').forEach((node) => node.remove());
 }
 
+
 /**
  * Функция, которая применяется при переключении фильтра.
  * Обёрнута в debounce в конфигурации слушателя.

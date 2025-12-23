@@ -63,6 +63,7 @@ function renderNextComments() {
   }
 }
 
+
 /**
  * Открывает модальное окно с полноэкранным просмотром фотографии
  */
@@ -107,6 +108,7 @@ export function showFullView(photoData) {
   closeBtn.addEventListener('click', onCloseButton);
   document.addEventListener('keydown', onEscClose);
 }
+
 
 /**
  * Закрывает полноэкранное окно
