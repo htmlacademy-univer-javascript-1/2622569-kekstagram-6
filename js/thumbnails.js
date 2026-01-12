@@ -32,7 +32,7 @@ function createThumbnail(photo) {
   img.src = photo.url;
   img.alt = photo.description || 'Фото пользователя';
   comments.textContent = photo.comments ? photo.comments.length : 0;
-  likes.textContent = photo.likes ?? 0;
+  likes.textContent = (photo.likes === undefined || photo.likes === null) ? 0 : photo.likes;
 
   // При клике открывается полноэкранный просмотр
   element.addEventListener('click', (evt) => {

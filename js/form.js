@@ -1,13 +1,10 @@
 import { sendData } from './api.js';
+import { showFullView } from './big-picture.js';
 import { resetForm, showMessage, handleEscapePress } from './form-utils.js';
 
-/**
- * Параметры масштабирования (в процентах)
- */
 const SCALE_STEP = 25;
 const SCALE_MIN = 25;
 const SCALE_MAX = 100;
-
 
 /**
  * Инициализация формы загрузки изображения.
@@ -16,9 +13,7 @@ const SCALE_MAX = 100;
  * @param {Array} photosArray — массив текущих фото (моделируемая "база" в клиенте)
  * @param {Function} renderThumbnails — функция отрисовки миниатюр (из thumbnails.js)
  */
-
-
-export function initForm(photosArray, renderThumbnails) {
+export function initForm(photosArray) {
   // Основные элементы формы
   const form = document.querySelector('.img-upload__form');
   const fileInput = form.querySelector('.img-upload__input');
@@ -26,7 +21,6 @@ export function initForm(photosArray, renderThumbnails) {
   const overlayCloseBtn = overlay.querySelector('.img-upload__cancel');
   const submitBtn = form.querySelector('.img-upload__submit');
   const previewImg = overlay.querySelector('.img-upload__preview img');
-
 
   // Элементы слайдера эффектов
   const effectPanel = document.querySelector('.effect-level');
@@ -49,10 +43,6 @@ export function initForm(photosArray, renderThumbnails) {
     errorTextParent: 'img-upload__field-wrapper',
   });
 
-  // ---------------------------------------------------------------------------
-  // ---------- Управление открытием / закрытием панели редактирования ----------
-  // ---------------------------------------------------------------------------
-
   function openOverlay() {
     overlay.classList.remove('hidden');
     document.body.classList.add('modal-open');
@@ -60,10 +50,20 @@ export function initForm(photosArray, renderThumbnails) {
   }
 
   function closeOverlay() {
-    // Сброс формы и состояния пользовательского интерфейса
-    resetForm();
-    overlay.classList.add('hidden');
-    document.body.classList.remove('modal-open');
+    resetForm({
+      form,
+      overlay,
+      previewImg,
+      fileInput,
+      hashtagsInput,
+      descriptionInput,
+      scaleValue: form.querySelector('.scale__control--value'),
+      effectSlider,
+      effectLevelContainer: overlay.querySelector('.img-upload__effect-level'),
+      pristine,
+      effectRadios,
+    });
+
     document.removeEventListener('keydown', onDocumentKeydown);
   }
 
@@ -80,11 +80,7 @@ export function initForm(photosArray, renderThumbnails) {
     closeOverlay();
   });
 
-  // ---------------------------------------------------------------------------
-  // -------------------------- Загрузка выбранного файла ----------------------
-  // ---------------------------------------------------------------------------
-
-  fileInput.addEventListener('change', (evt) => {
+  fileInput.addEventListener('change', () => {
     const file = fileInput.files && fileInput.files[0];
     if (!file) {
       return;
@@ -103,34 +99,36 @@ export function initForm(photosArray, renderThumbnails) {
     openOverlay();
   });
 
-  // ---------------------------------------------------------------------------
-  // ----------------------------- Масштабирование -----------------------------
-  // ---------------------------------------------------------------------------
-
   function initScaleControls() {
     const valueField = document.querySelector('.scale__control--value');
-    const btnSmaller = document.querySelector('.scale__control--smaller');
-    const btnBigger = document.querySelector('.scale__control--bigger');
+    const scaleSmallerButton = document.querySelector('.scale__control--smaller');
+    const scaleBiggerButton = document.querySelector('.scale__control--bigger');
 
     function applyScale(percent) {
       // Защита от переполнения минимум/максимум
-      let p = Number(percent);
-      if (Number.isNaN(p)) p = 100;
-      if (p < SCALE_MIN) p = SCALE_MIN;
-      if (p > SCALE_MAX) p = SCALE_MAX;
+      let scalePercent = Number(percent);
+      if (Number.isNaN(scalePercent)) {
+        scalePercent = 100;
+      }
+      if (scalePercent < SCALE_MIN) {
+        scalePercent = SCALE_MIN;
+      }
+      if (scalePercent > SCALE_MAX) {
+        scalePercent = SCALE_MAX;
+      }
 
-      valueField.value = `${p}%`;
-      previewImg.style.transform = `scale(${p / 100})`;
+      valueField.value = `${scalePercent}%`;
+      previewImg.style.transform = `scale(${scalePercent / 100})`;
     }
 
-    btnSmaller.addEventListener('click', () => {
-      const val = parseInt(valueField.value, 10);
-      applyScale(val - SCALE_STEP);
+    scaleSmallerButton.addEventListener('click', () => {
+      const currentScaleValue = parseInt(valueField.value, 10);
+      applyScale(currentScaleValue - SCALE_STEP);
     });
 
-    btnBigger.addEventListener('click', () => {
-      const val = parseInt(valueField.value, 10);
-      applyScale(val + SCALE_STEP);
+    scaleBiggerButton.addEventListener('click', () => {
+      const currentScaleValue = parseInt(valueField.value, 10);
+      applyScale(currentScaleValue + SCALE_STEP);
     });
 
     // Установим значение по умолчанию
@@ -138,10 +136,6 @@ export function initForm(photosArray, renderThumbnails) {
   }
 
   initScaleControls();
-
-  // ---------------------------------------------------------------------------
-  // ------------------------------ Ползунок эффектов --------------------------
-  // ---------------------------------------------------------------------------
 
   // Создаём noUiSlider, если он ещё не инициализирован
   function setupEffectSlider() {
@@ -186,26 +180,26 @@ export function initForm(photosArray, renderThumbnails) {
     previewImg.classList.add(`effects__preview--${effectName}`);
 
     // В зависимости от эффекта, рассчитываем CSS-фильтр
-    const v = Number(intensity);
+    const sliderValue = Number(intensity);
     switch (effectName) {
       case 'chrome':
         // grayscale: 0..1
-        previewImg.style.filter = `grayscale(${(v / 100).toFixed(2)})`;
+        previewImg.style.filter = `grayscale(${(sliderValue / 100).toFixed(2)})`;
         break;
       case 'sepia':
-        previewImg.style.filter = `sepia(${(v / 100).toFixed(2)})`;
+        previewImg.style.filter = `sepia(${(sliderValue / 100).toFixed(2)})`;
         break;
       case 'marvin':
         // invert: в процентах
-        previewImg.style.filter = `invert(${Math.round(v)}%)`;
+        previewImg.style.filter = `invert(${Math.round(sliderValue)}%)`;
         break;
       case 'phobos':
         // blur: 0..3px
-        previewImg.style.filter = `blur(${((v / 100) * 3).toFixed(2)}px)`;
+        previewImg.style.filter = `blur(${((sliderValue / 100) * 3).toFixed(2)}px)`;
         break;
       case 'heat':
         // brightness: 1..3
-        previewImg.style.filter = `brightness(${(1 + (v / 100) * 2).toFixed(2)})`;
+        previewImg.style.filter = `brightness(${(1 + (sliderValue / 100) * 2).toFixed(2)})`;
         break;
       default:
         previewImg.style.filter = '';
@@ -237,17 +231,17 @@ export function initForm(photosArray, renderThumbnails) {
   // Подписываемся на изменения слайдера
   if (effectSlider && effectSlider.noUiSlider) {
     effectSlider.noUiSlider.on('update', (values) => {
-      const val = Array.isArray(values) ? values[0] : values;
-      effectValueField.value = val;
-      applyEffect(currentEffect, val);
+      const currentScaleValue = Array.isArray(values) ? values[0] : values;
+      effectValueField.value = currentScaleValue;
+      applyEffect(currentEffect, currentScaleValue);
     });
   } else if (effectSlider) {
     // Если только что создали, привязываем обработчик после создания
     if (effectSlider.noUiSlider) {
       effectSlider.noUiSlider.on('update', (values) => {
-        const val = Array.isArray(values) ? values[0] : values;
-        effectValueField.value = val;
-        applyEffect(currentEffect, val);
+        const currentScaleValue = Array.isArray(values) ? values[0] : values;
+        effectValueField.value = currentScaleValue;
+        applyEffect(currentEffect, currentScaleValue);
       });
     }
   }
@@ -271,34 +265,34 @@ export function initForm(photosArray, renderThumbnails) {
   }
   setSliderVisibility(currentEffect);
 
-  // ---------------------------------------------------------------------------
-  // -------------------------------- Валидация -------------------------------
-  // ---------------------------------------------------------------------------
-
   // Валидатор хэштегов: до 5 тегов, каждый начинается с '#', длина правила как в задании
   pristine.addValidator(hashtagsInput, (value) => {
     const trimmed = value.trim();
-    if (trimmed === '') return true; // пустое значение — допустимо
+    if (trimmed === '') {
+      return true;
+    }
 
     // Разбиваем по пробелам, отбрасываем пустые элементы
     const tags = trimmed.split(/\s+/).filter(Boolean).map((t) => t.toLowerCase());
-    const tagPattern = /^#[A-Za-zА-Яа-я0-9]{2,19}$/;
-    if (tags.length > 5) return false;
+    const tagPattern = /^#[A-Za-zА-Яа-я0-9]{1,19}$/;
+    if (tags.length > 5) {
+      return false;
+    }
 
     const unique = new Set(tags);
-    if (unique.size !== tags.length) return false;
+    if (unique.size !== tags.length) {
+      return false;
+    }
 
     return tags.every((t) => tagPattern.test(t));
   }, 'Неверный формат хэш-тега или превышено количество (макс 5)');
 
   // Валидатор описания: максимум 140 символов
-  pristine.addValidator(descriptionInput, (value) => {
-    return value.length <= 140;
-  }, 'Комментарий не может превышать 140 символов');
-
-  // ---------------------------------------------------------------------------
-  // --------------------------- Отправка формы на сервер ----------------------
-  // ---------------------------------------------------------------------------
+  pristine.addValidator(
+    descriptionInput,
+    (value) => value.length <= 140,
+    'Комментарий не может превышать 140 символов'
+  );
 
   form.addEventListener('submit', async (evt) => {
     evt.preventDefault();
@@ -345,37 +339,23 @@ export function initForm(photosArray, renderThumbnails) {
       newThumbnail.querySelector('.picture__likes').textContent = newPhoto.likes;
 
       // Добавляем клик для открытия в big-picture
-      newThumbnail.addEventListener('click', (evt) => {
+      newThumbnail.addEventListener('click', () => {
         evt.preventDefault();
-        import('./big-picture.js').then(({ showFullView }) => showFullView(newPhoto));
+        showFullView(newPhoto);
       });
 
 
-
+      // Вставляем в конец списка
       galleryContainer.appendChild(newThumbnail);
 
       // Сбрасываем форму
-      resetForm();
+      closeOverlay();
 
     } catch (err) {
       // При ошибке показа — показываем сообщение с ошибкой
-      console.error('Ошибка отправки данных:', err);
       showMessage('error');
     } finally {
       submitBtn.disabled = false;
     }
   });
-
-
-  // ---------------------------------------------------------------------------
-  // ----------------------------- Вспомогательные -----------------------------
-  // ---------------------------------------------------------------------------
-
-  // При клике на фон оверлея — ничего не делаем (в оригинале — закрытие по клику по фону —
-  // оставим стандартное поведение: закрываем при клике на сам фон шаблонного message)
-  // Важно: resetForm() внутри form-utils.js уже скрывает overlay; поэтому при
-  // закрытии через другие механизмы используется closeOverlay().
-
-  // Обеспечим дополнительный listener: если в другом месте проекта кто-то вручную вызовет resetForm,
-  // то состояние корректно обновится (это делается внутри resetForm).
 }

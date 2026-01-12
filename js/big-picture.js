@@ -5,7 +5,6 @@ import { handleEscapePress } from './form-utils.js';
  */
 const COMMENTS_BATCH_SIZE = 5;
 
-
 // Основные DOM-элементы для полноэкранного режима
 const fullViewSection = document.querySelector('.big-picture');
 const fullImage = fullViewSection.querySelector('.big-picture__img img');
@@ -17,10 +16,10 @@ const commentsStatus = fullViewSection.querySelector('.social__comment-count');
 const loadMoreBtn = fullViewSection.querySelector('.comments-loader');
 const closeBtn = fullViewSection.querySelector('.big-picture__cancel');
 
-
+// Временное хранилище для комментариев
 let allComments = [];
 let renderedCount = 0;
-//исправить
+
 /**
  * Создание DOM-элемента комментария
  */
@@ -63,7 +62,6 @@ function renderNextComments() {
   }
 }
 
-
 /**
  * Открывает модальное окно с полноэкранным просмотром фотографии
  */
@@ -105,10 +103,9 @@ export function showFullView(photoData) {
   document.body.classList.add('modal-open');
 
   // Добавляем слушатели
-  closeBtn.addEventListener('click', onCloseButton);
-  document.addEventListener('keydown', onEscClose);
+  closeBtn.addEventListener('click', onCloseButtonClick);
+  document.addEventListener('keydown', onDocumentKeydown);
 }
-
 
 /**
  * Закрывает полноэкранное окно
@@ -116,23 +113,23 @@ export function showFullView(photoData) {
 function hideFullView() {
   fullViewSection.classList.add('hidden');
   document.body.classList.remove('modal-open');
-  closeBtn.removeEventListener('click', onCloseButton);
-  document.removeEventListener('keydown', onEscClose);
+  closeBtn.removeEventListener('click', onCloseButtonClick);
+  document.removeEventListener('keydown', onDocumentKeydown);
 }
 
 /**
  * Обработчики
  */
-function onCloseButton() {
+function onCloseButtonClick() {
   hideFullView();
 }
 
-function onEscClose(evt) {
+function onDocumentKeydown(evt) {
   handleEscapePress(evt, hideFullView);
 }
 
-function onLoadMore() {
+function onLoadMoreButtonClick() {
   renderNextComments();
 }
 
-loadMoreBtn.addEventListener('click', onLoadMore);
+loadMoreBtn.addEventListener('click', onLoadMoreButtonClick);

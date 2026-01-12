@@ -7,13 +7,26 @@
  * @param {Function} callback
  */
 export function handleEscapePress(evt, callback) {
-  if (!evt) return;
+  if (!evt) {
+    return;
+  }
+
   const key = evt.key || evt.keyCode;
-  if (key === 'Escape' || key === 'Esc' || key === 27) {
-    evt.preventDefault && evt.preventDefault();
-    callback && callback();
+  const isEscape = (key === 'Escape' || key === 'Esc' || key === 27);
+
+  if (!isEscape) {
+    return;
+  }
+
+  if (typeof evt.preventDefault === 'function') {
+    evt.preventDefault();
+  }
+
+  if (typeof callback === 'function') {
+    callback();
   }
 }
+
 
 /**
  * resetForm — аккуратно сбрасывает форму и интерфейс редактирования:
@@ -23,68 +36,71 @@ export function handleEscapePress(evt, callback) {
  * - сбрасывает масштаб в value и style
  * - если есть noUiSlider — сбрасывает его значение на 100
  */
-export function resetForm() {
-  const form = document.querySelector('.img-upload__form');
-  const overlay = document.querySelector('.img-upload__overlay');
-  const previewImg = overlay ? overlay.querySelector('.img-upload__preview img') : null;
-  const hashtagsInput = form ? form.querySelector('.text__hashtags') : null;
-  const descriptionInput = form ? form.querySelector('.text__description') : null;
-  const fileInput = form ? form.querySelector('.img-upload__input') : null;
-  const scaleValue = document.querySelector('.scale__control--value');
-  const effectSliderEl = document.querySelector('.effect-level__slider');
-  const effectWrapper = document.querySelector('.effect-level');
+// form-utils.js
 
+const DEFAULT_SCALE = 100;
 
-  try {
-    if (form) form.reset();
-  } catch (err) {
-    // ignore
+export function resetForm({
+  form,
+  overlay,
+  previewImg,
+  fileInput,
+  hashtagsInput,
+  descriptionInput,
+  scaleValue,
+  effectSlider,
+  effectLevelContainer,
+  pristine,
+  effectRadios,
+}) {
+  form.reset();
+
+  // pristine: убрать тексты ошибок и классы
+  if (pristine) {
+    pristine.reset();
   }
 
-  // Сброс содержимого превью
+  // scale
+  if (scaleValue) {
+    scaleValue.value = `${DEFAULT_SCALE}%`;
+  }
   if (previewImg) {
-    previewImg.src = '';
-    previewImg.className = '';
+    previewImg.style.transform = `scale(${DEFAULT_SCALE / 100})`;
     previewImg.style.filter = '';
-    previewImg.style.transform = 'scale(1)';
+    previewImg.className = '';
   }
 
-  if (hashtagsInput) hashtagsInput.value = '';
-  if (descriptionInput) descriptionInput.value = '';
+  if (effectRadios && effectRadios.length) {
+    effectRadios.forEach((radio) => {
+      radio.checked = (radio.value === 'none');
+    });
+  }
+
+  if (effectSlider && effectSlider.noUiSlider) {
+    effectSlider.noUiSlider.set(100);
+  }
+  if (effectLevelContainer) {
+    effectLevelContainer.classList.add('hidden');
+  }
+
+  if (hashtagsInput) {
+    hashtagsInput.value = '';
+  }
+
+  if (descriptionInput) {
+    descriptionInput.value = '';
+  }
 
   if (fileInput) {
-    // Удаляем выбранный файл (если был)
-    try {
-      fileInput.value = '';
-    } catch (err) {
-      // IE может не позволить обновить .value, но это некритично
-    }
+    fileInput.value = '';
   }
 
-  if (scaleValue) scaleValue.value = '100%';
-
-  // Если используем noUiSlider — сброс к 100
-  if (effectSliderEl && effectSliderEl.noUiSlider) {
-    try {
-      effectSliderEl.noUiSlider.set(100);
-    } catch (err) {
-      // безопасный игнор
-    }
-  }
-
-  // Скрываем панель эффектов
-  if (effectWrapper) {
-    effectWrapper.style.display = 'none';
-  }
-
-  // Убираем overlay если открыт
   if (overlay) {
     overlay.classList.add('hidden');
   }
-
-  // Убираем глобальный класс блокировки прокрутки
   document.body.classList.remove('modal-open');
 }
+
 
 /**
  * showMessage — клонирует шаблон success/error и выводит его на экран.
@@ -96,19 +112,19 @@ export function resetForm() {
  * type: 'success' | 'error' — должен соответствовать id шаблона (#success / #error)
  */
 export function showMessage(type) {
-  if (!type) return;
+  if (!type) {
+    return;
+  }
 
   const templateId = `#${type}`;
   const template = document.querySelector(templateId);
   if (!template || !template.content) {
-    console.error('Шаблон сообщения не найден:', templateId);
     return;
   }
 
   // Найдём корневой блок внутри template (section.success или section.error)
   const inner = template.content.querySelector(`.${type}`);
   if (!inner) {
-    console.error('В шаблоне не найден ожидаемый элемент:', type);
     return;
   }
 
@@ -125,16 +141,16 @@ export function showMessage(type) {
     if (instance && instance.parentNode) {
       instance.parentNode.removeChild(instance);
     }
-    document.removeEventListener('keydown', onEsc);
+    document.removeEventListener('keydown', onDocumentKeydown);
     // безопасно удалить listener клика по документу (если был)
-    document.removeEventListener('click', onOutsideClick);
+    document.removeEventListener('click', onOverlayClick);
   }
 
-  function onEsc(evt) {
+  function onDocumentKeydown(evt) {
     handleEscapePress(evt, removeMessage);
   }
 
-  function onOutsideClick(evt) {
+  function onOverlayClick(evt) {
     // Закрываем только если кликнули по самому затемнённому overlay (root instance)
     if (evt.target === instance) {
       removeMessage();
@@ -142,8 +158,8 @@ export function showMessage(type) {
   }
 
   // Назначим слушатели
-  document.addEventListener('keydown', onEsc);
-  document.addEventListener('click', onOutsideClick);
+  document.addEventListener('keydown', onDocumentKeydown);
+  document.addEventListener('click', onOverlayClick);
 
   if (closeBtn) {
     closeBtn.addEventListener('click', removeMessage);

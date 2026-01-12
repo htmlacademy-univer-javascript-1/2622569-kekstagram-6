@@ -2,7 +2,6 @@
 import { getData } from './api.js';
 import { initForm } from './form.js';
 import { renderThumbnails } from './thumbnails.js';
-import { showMessage } from './form-utils.js';
 
 /**
  * Настройки фильтрации и дебаунса
@@ -29,7 +28,9 @@ function debounce(fn, delay) {
   };
 }
 
-
+/**
+ * Возвращает случайную порцию фотографий из массива (не мутирует исходный массив)
+ */
 function pickRandomPhotos(photos) {
   const copy = photos.slice();
   // простой shuffle
@@ -40,12 +41,11 @@ function pickRandomPhotos(photos) {
   return copy.slice(0, Math.min(RANDOM_PHOTO_LIMIT, copy.length));
 }
 
-
 /**
  * Возвращает массив, отсортированный по количеству комментариев (убывание)
  */
 function pickMostDiscussed(photos) {
-  return photos.slice().sort((a, b) => (b.comments?.length || 0) - (a.comments?.length || 0));
+  return photos.slice().sort((a, b) => (b.comments && b.comments.length || 0) - (a.comments && a.comments.length || 0));
 }
 
 /**
@@ -54,7 +54,6 @@ function pickMostDiscussed(photos) {
 function clearGallery() {
   galleryRoot.querySelectorAll('.picture').forEach((node) => node.remove());
 }
-
 
 /**
  * Функция, которая применяется при переключении фильтра.
@@ -76,7 +75,6 @@ const applyFilter = debounce((filterId) => {
       break;
   }
 
-
   // Рисуем миниатюры для выбранного набора
   renderThumbnails(currentDisplayed);
 }, DEBOUNCE_DELAY);
@@ -90,10 +88,14 @@ function enableFilters() {
 
   filtersSection.addEventListener('click', (evt) => {
     const target = evt.target;
-    if (!target.classList.contains('img-filters__button')) return;
+    if (!target.classList.contains('img-filters__button')) {
+      return;
+    }
 
     const active = filtersSection.querySelector('.img-filters__button--active');
-    if (active) active.classList.remove('img-filters__button--active');
+    if (active) {
+      active.classList.remove('img-filters__button--active');
+    }
     target.classList.add('img-filters__button--active');
 
     applyFilter(target.id);
@@ -122,10 +124,26 @@ async function loadAndInit() {
     initForm(allPhotos, renderThumbnails);
 
   } catch (err) {
-    console.error('Ошибка при получении/инициализации данных:', err);
     // Покажем пользователю шаблон ошибки (встраивается в DOM из index.html)
-    showMessage('error');
+    showDataLoadError();
   }
+}
+
+function showDataLoadError() {
+  const existing = galleryRoot.querySelector('.pictures__data-error');
+  if (existing) {
+    return;
+  }
+
+  const block = document.createElement('div');
+  block.classList.add('pictures__data-error');
+  block.textContent = 'Не удалось загрузить фотографии. Проверьте подключение к интернету и обновите страницу.';
+  // Минимально, чтобы было видно даже без CSS:
+  block.style.padding = '10px';
+  block.style.margin = '10px 0';
+  block.style.border = '1px solid #ff4d4d';
+
+  galleryRoot.prepend(block);
 }
 
 // Запускаем загрузку при старте скрипта
